@@ -1,10 +1,10 @@
-from kivymd.app import MDApp
 from kivy.lang import Builder
+from kivymd.app import MDApp
 from kivymd.uix.screen import MDScreen
-from kivymd.uix.button import MDRectangleFlatButton
+from kivymd.uix.button import MDRectangleFlatButton, MDFillRoundFlatButton
 from kivymd.uix.textfield import MDTextField
-
-import re
+from kivymd.uix.toolbar import MDTopAppBar
+import datetime
 
 KV = '''
 ScreenManager:
@@ -13,6 +13,7 @@ ScreenManager:
     RegScreen:
     SuccessLoginScreen:
     SuccessRegScreen:
+    MainMenuScreen:
 
 <WelcomeScreen>:
     name: 'welcome'
@@ -151,6 +152,40 @@ ScreenManager:
         on_release: app.root.current = 'login'
         md_bg_color: app.theme_cls.primary_color
         text_color: 1, 1, 1, 1
+
+<MainMenuScreen>:
+    name: 'main_menu'
+    FloatLayout:
+        MDTopAppBar:
+            title: 'Price Control'
+            pos_hint: {'top': 1}
+            size_hint_y: None
+            height: '56dp'  
+
+        MDLabel:
+            id: greeting
+            text: ''
+            halign: 'left'
+            size_hint_y: None
+            height: '48dp'
+            pos_hint: {'x': 0, 'y': 0.8}
+            padding_x: 10
+
+        MDFillRoundFlatButton:
+            text: 'Загрузить изображение'
+            icon: 'camera'
+            size_hint: None, None
+            size: '200dp', '48dp'
+            pos_hint: {'center_x': 0.5, 'y': 0.5}
+
+        MDFillRoundFlatButton:
+            text: 'Поиск'
+            icon: 'magnify'
+            size_hint: None, None
+            size: '200dp', '48dp'
+            pos_hint: {'center_x': 0.5, 'y': 0.4}
+
+
 '''
 
 class WelcomeScreen(MDScreen):
@@ -168,22 +203,46 @@ class SuccessLoginScreen(MDScreen):
 class SuccessRegScreen(MDScreen):
     pass
 
+class MainMenuScreen(MDScreen):
+    pass
+
 class MyApp(MDApp):
     def build(self):
         self.theme_cls.primary_palette = 'Blue'
         self.theme_cls.accent_palette = 'Amber'
         return Builder.load_string(KV)
 
+    def on_start(self):
+        self.set_greeting()
+
+    def set_greeting(self):
+        current_time = datetime.datetime.now()
+        if 5 <= current_time.hour < 12:
+            greeting = 'Доброе утро, '
+        elif 12 <= current_time.hour < 18:
+            greeting = 'Добрый день, '
+        else:
+            greeting = 'Добрый вечер, '
+        user_name = 'Администратор'
+        self.root.get_screen('main_menu').ids.greeting.text = greeting + user_name
+
+    def load_image(self):
+        # Здесь должен быть вызов функции для загрузки изображения из галереи или камеры
+        print("Загрузка изображения...")
+
+    def search_item(self):
+        print("Поиск завершен успешно!")
+
     def check_login(self):
         login = self.root.get_screen('login').ids.login_field
         password = self.root.get_screen('login').ids.password_field
-        if login.text.strip() == '' or password.text.strip() == '':
+        if login.text == 'admin' and password.text == 'admin':
+            self.root.current = 'main_menu'
+        else:
             if login.text.strip() == '':
                 login.line_color_normal = (1, 0, 0, 1)
             if password.text.strip() == '':
                 password.line_color_normal = (1, 0, 0, 1)
-            return
-        self.root.current = 'success_login'
 
     def check_register(self):
         name = self.root.get_screen('register').ids.name_field
@@ -200,7 +259,6 @@ class MyApp(MDApp):
         user_name = name.text.strip()
         self.root.get_screen('success_register').ids.label.text = f'Поздравляем, {user_name}! Вы успешно зарегистрированы.'
         self.root.current = 'success_register'
-
 
 if __name__ == '__main__':
     MyApp().run()
