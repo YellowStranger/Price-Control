@@ -10,6 +10,8 @@ from kivymd.uix.menu import MDDropdownMenu
 from kivy.uix.image import Image
 from kivy.core.window import Window
 from kivy.clock import Clock
+from kivy_garden.mapview import MapView, MapMarkerPopup, MarkerMapLayer
+from kivy.uix.bubble import Bubble
 from app_net import Socket
 from plyer import filechooser, camera
 import asyncio
@@ -25,6 +27,9 @@ ScreenManager:
     SuccessLoginScreen:
     SuccessRegScreen:
     MainMenuScreen:
+    StoreMapScreen:
+    ContactUsScreen:
+
 
 <WelcomeScreen>:
     name: 'welcome'
@@ -227,43 +232,110 @@ ScreenManager:
             icon: 'image-multiple'
             pos_hint: {'center_x': 0.5, 'center_y': 0.5}
             on_release: app.load_image()
-            md_bg_color: app.theme_cls.accent_color
+            md_bg_color: app.theme_cls.primary_color
             text_color: 1, 1, 1, 1
-               
+
         MDIconButton:
             id: menu_button
             icon: 'menu'
             user_font_size: '24sp'
-            pos_hint: {'center_x': 0.95, 'center_y': 0.945}
+            pos_hint: {'center_x': 0.95, 'center_y': 0.95}
             on_release: app.open_menu(self)
+
+<StoreMapScreen>:
+    name: 'store_map'
+    BoxLayout:
+        orientation: 'vertical'
+        MDTopAppBar:
+            title: 'Карта магазинов'
+            pos_hint: {'top': 1}
+            elevation: 10
+            specific_text_color: 1, 1, 1, 1
+            left_action_items: [["arrow-left", lambda x: app.go_to_main_menu()]]
+
+        MapView:
+            lat: 48.011448  # Центральная широта
+            lon: 37.802188  # Центральная долгота
+            zoom: 11  # Начальный уровень масштабирования
+            MapMarkerPopup:
+                lat: 48.015883
+                lon: 37.802850
+                popup_size: dp(230), dp(130)
+                Bubble:
+                    Label:
+                        text: "Магазин продукты"
+
+<ContactUsScreen>:
+    name: 'contact_us'
+    BoxLayout:
+        orientation: 'vertical'
+        MDTopAppBar:
+            title: 'Связаться с нами'
+            pos_hint: {'top': 1}
+            elevation: 10
+            left_action_items: [["arrow-left", lambda x: app.go_to_main_menu()]]
+        MDLabel:
+            text: 'Вы можете связаться с нами по следующим данным:'
+            halign: 'center'
+            size_hint_y: None
+            height: dp(40)
+            pos_hint: {'center_x': 0.5, 'center_y': 0.7}
+        MDLabel:
+            text: 'Email: info@example.com'
+            halign: 'center'
+            size_hint_y: None
+            height: dp(40)
+            pos_hint: {'center_x': 0.5, 'center_y': 0.6}
+        MDLabel:
+            text: 'Телефон: +7 123 456 7890'
+            halign: 'center'
+            size_hint_y: None
+            height: dp(40)
+            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
 
 
 '''
 
+
 class WelcomeScreen(MDScreen):
     pass
+
 
 class LoginScreen(MDScreen):
     pass
 
+
 class RegScreen(MDScreen):
     pass
+
 
 class SuccessLoginScreen(MDScreen):
     pass
 
+
 class SuccessRegScreen(MDScreen):
     pass
+
 
 class MainMenuScreen(MDScreen):
     pass
 
+
+class StoreMapScreen(MDScreen):
+    pass
+
+
+class ContactUsScreen(MDScreen):
+    pass
+
+
 class PriceControl(MDApp):
     dialog = None
     menu = None
-    
+
     async def app_run(self):
         await self.async_run(async_lib='asyncio')
+
     def sock_close(self, *kwargs):
         asyncio.create_task(sock.close())
 
@@ -276,16 +348,15 @@ class PriceControl(MDApp):
 
     def create_menu(self, caller_widget):
         menu_items = [
-            {"text": "Главная"},
-            {"text": "Категории"},
-            {"text": "Мои запросы"},
-            {"text": "Магазины"},
-            {"text": "Связаться с нами"}
+            {"text": "Главная", "on_release": lambda: self.switch_to_main_menu()},
+            {"text": "Мои запросы", "on_release": lambda: self.open_my_requests()},
+            {"text": "Магазины", "on_release": lambda: self.open_store_map()},
+            {"text": "Связаться с нами", "on_release": lambda: self.contact_us()}
         ]
         self.menu = MDDropdownMenu(
             caller=caller_widget,
             items=menu_items,
-            width_mult=4,
+            width_mult=4
         )
 
     def open_menu(self, caller_widget):
@@ -293,6 +364,24 @@ class PriceControl(MDApp):
             self.create_menu(caller_widget)
         self.menu.open()
 
+    def menu_callback(self, instance_menu_item):
+        instance_menu_item.on_release(instance_menu_item)
+        self.menu.dismiss()
+
+    def switch_to_main_menu(self):
+        self.root.current = 'main_menu'
+        self.menu.dismiss()
+
+    def open_my_requests(self):
+        self.menu.dismiss()
+
+    def open_store_map(self):
+        self.root.current = 'store_map'
+        self.menu.dismiss()
+
+    def contact_us(self):
+        self.root.current = 'contact_us'
+        self.menu.dismiss()
 
     def on_start(self):
         self.set_greeting()
@@ -356,6 +445,12 @@ class PriceControl(MDApp):
         if selection:
             self.root.get_screen('main_menu').ids.photo.source = selection[0]
 
+    def open_store_map(self):
+        self.root.current = 'store_map'
+
+    def go_to_main_menu(self):
+        self.root.current = 'main_menu'
+
     def search_item(self):
         print("Поиск завершен успешно!")
 
@@ -363,7 +458,7 @@ class PriceControl(MDApp):
         self.login = self.root.get_screen('login').ids.login_field
         self.password = self.root.get_screen('login').ids.password_field
         self.sock_start = asyncio.create_task(sock.login(self.login.text, self.password.text))
-        # отслеживание завершения авторизации 
+        # отслеживание завершения авторизации
         self.schedule_event = Clock.schedule_interval(self.check_handshake_complete, 0.3)
 
     def check_register(self):
@@ -371,32 +466,33 @@ class PriceControl(MDApp):
         self.phone = self.root.get_screen('register').ids.phone_field
         self.email = self.root.get_screen('register').ids.email_field
         self.password = self.root.get_screen('register').ids.password_field
-        
+
         self.sock_start = asyncio.create_task(sock.register(self.email.text, self.password.text, phone=self.phone.text))
         self.schedule_event = Clock.schedule_interval(self.check_handshake_complete, 0.3)
 
         user_name = self.bname.text.strip()
-        self.root.get_screen('success_register').ids.label.text = f'Поздравляем, {user_name}! Вы успешно зарегистрированы.'
+        self.root.get_screen(
+            'success_register').ids.label.text = f'Поздравляем, {user_name}! Вы успешно зарегистрированы.'
         self.root.current = 'success_register'
-    
+
     def check_handshake_complete(self, *kwargs):
         try:
-        
+
             if sock.event == "login":
-                
+
                 # авторизация прошла успешно
                 if sock.correct:
-                    #self.username = self.sock_start.result()
+                    # self.username = self.sock_start.result()
                     self.root.current = 'main_menu'
                     self.schedule_event.cancel()
                     sock.correct = False
-                else :
+                else:
                     self.schedule_event.cancel()
                     if self.login.text.strip() == '':
                         self.login.line_color_normal = (1, 0, 0, 1)
                     if self.password.text.strip() == '':
                         self.password.line_color_normal = (1, 0, 0, 1)
-                
+
 
             elif sock.event == 'register':
                 if sock.correct:
@@ -418,6 +514,7 @@ class PriceControl(MDApp):
                         self.schedule_event.cancel()
         except AttributeError:
             pass
+
 
 if __name__ == '__main__':
     asyncio.run(PriceControl().app_run())
