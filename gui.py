@@ -1,4 +1,5 @@
 from kivy.lang import Builder
+from kivy.properties import StringProperty
 from kivymd.app import MDApp
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.button import MDRectangleFlatButton, MDFillRoundFlatButton
@@ -7,15 +8,16 @@ from kivymd.uix.toolbar import MDTopAppBar
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.menu import MDDropdownMenu
+from kivymd.uix.list import OneLineListItem
 from kivy.uix.image import Image
 from kivy.core.window import Window
 from kivy.clock import Clock
-from kivy_garden.mapview import MapView, MapMarkerPopup, MarkerMapLayer
-from kivy.uix.bubble import Bubble
+from kivy.utils import platform
 from app_net import Socket
 from plyer import filechooser, camera
 import asyncio
 import datetime
+import os
 
 sock = Socket()
 
@@ -27,8 +29,11 @@ ScreenManager:
     SuccessLoginScreen:
     SuccessRegScreen:
     MainMenuScreen:
-    StoreMapScreen:
+    StoreListScreen:
     ContactUsScreen:
+    MyRequestsScreen:
+    AdminLoginScreen:
+    AdminScreen:
 
 
 <WelcomeScreen>:
@@ -110,6 +115,11 @@ ScreenManager:
         on_release: app.root.current = 'welcome'
         md_bg_color: app.theme_cls.accent_light
         text_color: 1, 1, 1, 1
+    MDIconButton:
+        icon: 'account-key'
+        user_font_size: '24sp'
+        pos_hint: {'center_x': 0.95, 'center_y': 0.95}
+        on_release: app.root.current = 'admin_login'
 
 <RegScreen>:
     name: 'register'
@@ -220,14 +230,6 @@ ScreenManager:
             font_style: 'Subtitle1'
 
         MDFillRoundFlatButton:
-            text: 'Сделать фото'
-            icon: 'camera'
-            pos_hint: {'center_x': 0.5, 'center_y': 0.6}
-            on_release: app.take_photo()
-            md_bg_color: app.theme_cls.primary_color
-            text_color: 1, 1, 1, 1
-
-        MDFillRoundFlatButton:
             text: 'Выбрать из галереи'
             icon: 'image-multiple'
             pos_hint: {'center_x': 0.5, 'center_y': 0.5}
@@ -242,50 +244,76 @@ ScreenManager:
             pos_hint: {'center_x': 0.95, 'center_y': 0.95}
             on_release: app.open_menu(self)
 
-<StoreMapScreen>:
+<StoreListScreen>:
     name: 'store_map'
     BoxLayout:
         orientation: 'vertical'
         MDTopAppBar:
-            title: 'Карта магазинов'
+            title: 'Магазины'
             pos_hint: {'top': 1}
             elevation: 10
-            specific_text_color: 1, 1, 1, 1
             left_action_items: [["arrow-left", lambda x: app.go_to_main_menu()]]
 
-        MapView:
-            lat: 48.011448  # Центральная широта
-            lon: 37.802188  # Центральная долгота
-            zoom: 11  # Начальный уровень масштабирования
-            MapMarkerPopup:
-                lat: 48.015883
-                lon: 37.802850
-                popup_size: dp(230), dp(130)
-                Bubble:
-                    Label:
-                        text: "Магазин продукты"
+        ScrollView:
+            MDList:
+                id: store_list
+                TwoLineListItem:
+                    text: "Верона"
+                    secondary_text: "Университетская ул., 63"
+
+                TwoLineListItem:
+                    text: "Супермаркет+"
+                    secondary_text: "Университетская ул., 59"
+
+                TwoLineListItem:
+                    text: "Аппетит"
+                    secondary_text: "пр. Мира, 11А"
+
+                TwoLineListItem:
+                    text: "Пир"
+                    secondary_text: "пр. Мира, 31"
+
+                TwoLineListItem:
+                    text: "Аппетит"
+                    secondary_text: "пр. Мира, 11А"
+
+                TwoLineListItem:
+                    text: "Продуктовый магазин"
+                    secondary_text: "ул. Артёма, 92"
+
+                TwoLineListItem:
+                    text: "Лакомка"
+                    secondary_text: "Университетская ул., 56"
+
+
+
 
 <ContactUsScreen>:
     name: 'contact_us'
     BoxLayout:
         orientation: 'vertical'
-        MDTopAppBar:
-            title: 'Связаться с нами'
-            pos_hint: {'top': 1}
-            elevation: 10
-            left_action_items: [["arrow-left", lambda x: app.go_to_main_menu()]]
+        padding: "10dp"
+        spacing: "10dp"
+
+        MDRectangleFlatButton:
+            text: 'Назад'
+            pos_hint: {'center_x': 0.5}
+            on_release: app.switch_to_main_menu()
+
         MDLabel:
             text: 'Вы можете связаться с нами по следующим данным:'
             halign: 'center'
             size_hint_y: None
             height: dp(40)
             pos_hint: {'center_x': 0.5, 'center_y': 0.7}
+
         MDLabel:
             text: 'Email: info@example.com'
             halign: 'center'
             size_hint_y: None
             height: dp(40)
             pos_hint: {'center_x': 0.5, 'center_y': 0.6}
+
         MDLabel:
             text: 'Телефон: +7 123 456 7890'
             halign: 'center'
@@ -293,6 +321,86 @@ ScreenManager:
             height: dp(40)
             pos_hint: {'center_x': 0.5, 'center_y': 0.5}
 
+<MyRequestsScreen>:
+    name: 'my_requests'
+    BoxLayout:
+        orientation: 'vertical'
+        MDTopAppBar:
+            title: 'Мои запросы'
+            pos_hint: {'top': 1}
+            elevation: 10
+            left_action_items: [["arrow-left", lambda x: app.go_to_main_menu()]]
+        MDLabel:
+            text: 'Здесь будут ваши обращения'
+            halign: 'center'
+            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+
+<AdminScreen>:
+    name: 'admin_screen'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: "20dp"
+        spacing: "10dp"
+
+        MDTopAppBar:
+            title: 'Панель администратора'
+            pos_hint: {'top': 1}
+            elevation: 10
+
+        ScrollView:
+            MDList:
+                id: inquiries_list
+                OneLineListItem:
+                    text: 'Пока нет обращений'
+
+        MDRectangleFlatButton:
+            text: 'Обновить'
+            pos_hint: {'center_x': 0.5}
+            on_release: app.refresh_admin_screen()
+
+        MDRectangleFlatButton:
+            text: 'Назад'
+            pos_hint: {'center_x': 0.5, 'center_y': 0.2}
+            on_release: app.root.current = 'welcome'
+            md_bg_color: app.theme_cls.accent_light
+            text_color: 1, 1, 1, 1
+
+<AdminLoginScreen>:
+    name: 'admin_login'
+    MDLabel:
+        text: 'Вход для администратора'
+        pos_hint: {'center_x': 0.55, 'center_y': 0.95}
+        halign: 'left'
+        font_style: 'H6'
+    MDTextField:
+        id: admin_login_field
+        hint_text: "Логин администратора"
+        pos_hint: {'center_x': 0.5, 'center_y': 0.6}
+        size_hint_x: None
+        width: 300
+        line_color_normal: app.theme_cls.primary_light
+        line_color_focus: app.theme_cls.primary_dark
+    MDTextField:
+        id: admin_password_field
+        hint_text: "Пароль администратора"
+        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+        size_hint_x: None
+        width: 300
+        password: True
+        line_color_normal: app.theme_cls.primary_light
+        line_color_focus: app.theme_cls.primary_dark
+    MDRectangleFlatButton:
+        text: 'Войти'
+        pos_hint: {'center_x': 0.5, 'center_y': 0.4}
+        on_release: app.check_admin_login()
+        md_bg_color: app.theme_cls.primary_color
+        text_color: 1, 1, 1, 1
+    MDRectangleFlatButton:
+        text: 'Назад'
+        pos_hint: {'center_x': 0.5, 'center_y': 0.3}
+        on_release: app.root.current = 'login'
+        md_bg_color: app.theme_cls.accent_light
+        text_color: 1, 1, 1, 1
 
 '''
 
@@ -300,38 +408,41 @@ ScreenManager:
 class WelcomeScreen(MDScreen):
     pass
 
-
 class LoginScreen(MDScreen):
     pass
-
 
 class RegScreen(MDScreen):
     pass
 
-
 class SuccessLoginScreen(MDScreen):
     pass
-
 
 class SuccessRegScreen(MDScreen):
     pass
 
-
 class MainMenuScreen(MDScreen):
     pass
 
-
-class StoreMapScreen(MDScreen):
+class StoreListScreen(MDScreen):
     pass
 
-
 class ContactUsScreen(MDScreen):
+    pass
+
+class MyRequestsScreen(MDScreen):
+    pass
+
+class AdminScreen(MDScreen):
+    pass
+
+class AdminLoginScreen(MDScreen):
     pass
 
 
 class PriceControl(MDApp):
     dialog = None
     menu = None
+    user_name = StringProperty('Гость')
 
     async def app_run(self):
         await self.async_run(async_lib='asyncio')
@@ -373,6 +484,7 @@ class PriceControl(MDApp):
         self.menu.dismiss()
 
     def open_my_requests(self):
+        self.root.current = 'my_requests'
         self.menu.dismiss()
 
     def open_store_map(self):
@@ -394,59 +506,20 @@ class PriceControl(MDApp):
             greeting = 'Добрый день, '
         else:
             greeting = 'Добрый вечер, '
-        user_name = 'Администратор'
-        self.root.get_screen('main_menu').ids.greeting.text = greeting + user_name + ' !'
-
-    def dialog_choice(self, title, camera_text, gallery_text):
-        if not self.dialog:
-            self.dialog = MDDialog(
-                title=title,
-                type="confirmation",
-                items=[
-                    MDFlatButton(
-                        text=camera_text,
-                        on_release=lambda _: self.resolve_choice("camera")
-                    ),
-                    MDFlatButton(
-                        text=gallery_text,
-                        on_release=lambda _: self.resolve_choice("gallery")
-                    ),
-                ],
-                buttons=[
-                    MDFlatButton(
-                        text="Отмена",
-                        on_release=lambda _: self.dialog.dismiss()
-                    )
-                ]
-            )
-        self.dialog.open()
-
-    def resolve_choice(self, choice):
-        self.dialog.dismiss()
-        if choice == "camera":
-            self.take_photo()
-        elif choice == "gallery":
-            filechooser.open_file(on_selection=self.selected_image, filters=["*.png", "*.jpg", "*.jpeg"])
+        self.root.get_screen('main_menu').ids.greeting.text = greeting + self.user_name + ' !'
 
     def load_image(self):
-        self.dialog_choice("Выберите действие", "Использовать камеру", "Выбрать из галереи")
+        try:
+            filechooser.open_file(on_selection=self.on_file_chosen)
+        except Exception as e:
+            print(f"Произошла ошибка при попытке открыть галерею: {str(e)}")
 
-    def photo_taken(self, result):
-        if result:
-            print(f"Фотография сохранена: {result}")
-        else:
-            print("Не удалось сделать фото.")
-
-    def take_photo(self):
-        path_to_save_image = MDApp.get_running_app().user_data_dir + '/photo.jpg'
-        camera.take_picture(filename=path_to_save_image, on_complete=self.photo_taken)
-
-    def selected_image(self, selection):
+    def on_file_chosen(self, selection):
         if selection:
-            self.root.get_screen('main_menu').ids.photo.source = selection[0]
-
-    def open_store_map(self):
-        self.root.current = 'store_map'
+            filepath = selection[0]
+            print(f"Выбран файл: {filepath}")
+        else:
+            print("Файл не был выбран.")
 
     def go_to_main_menu(self):
         self.root.current = 'main_menu'
@@ -460,6 +533,27 @@ class PriceControl(MDApp):
         self.sock_start = asyncio.create_task(sock.login(self.login.text, self.password.text))
         # отслеживание завершения авторизации
         self.schedule_event = Clock.schedule_interval(self.check_handshake_complete, 0.3)
+
+    def check_admin_login(self):
+        admin_login = self.root.get_screen('admin_login').ids.admin_login_field
+        admin_password = self.root.get_screen('admin_login').ids.admin_password_field
+        if admin_login.text == 'admin' and admin_password.text == 'admin':
+            self.open_admin_screen()
+        else:
+            if admin_login.text.strip() == '':
+                admin_login.line_color_normal = (1, 0, 0, 1)
+            if admin_password.text.strip() == '':
+                admin_password.line_color_normal = (1, 0, 0, 1)
+
+    def open_admin_screen(self):
+        self.root.current = 'admin_screen'
+        self.refresh_admin_screen()
+
+    def refresh_admin_screen(self):
+        inquiries_list = self.root.get_screen('admin_screen').ids.inquiries_list
+        inquiries_list.clear_widgets()
+        inquiries_list.add_widget(OneLineListItem(text='Пока нет обращений')
+        )
 
     def check_register(self):
         self.bname = self.root.get_screen('register').ids.name_field
